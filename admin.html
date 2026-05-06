@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">Admin Dashboard</div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Back to Site</a>
+                <button class="btn-danger" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <aside class="admin-sidebar">
+            <div class="sidebar-menu">
+                <a href="#" onclick="switchTab('images')" class="menu-item active" id="tab-images">Images</a>
+                <a href="#" onclick="switchTab('banners')" class="menu-item" id="tab-banners">Banners</a>
+            </div>
+        </aside>
+
+        <main class="admin-content">
+            <!-- Images Tab -->
+            <section id="images-tab" class="tab-content active">
+                <div class="tab-header">
+                    <h2>Image Management</h2>
+                    <button class="btn-primary" onclick="openImageModal()">+ Add Image</button>
+                </div>
+                <div id="imagesList" class="images-list"></div>
+            </section>
+
+            <!-- Banners Tab -->
+            <section id="banners-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Banner Management</h2>
+                    <button class="btn-primary" onclick="openBannerModal()">+ Add Banner</button>
+                </div>
+                <div id="bannersList" class="banners-list"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content small">
+            <button class="modal-close" onclick="closeImageModal()">&times;</button>
+            <h3 id="imageModalTitle">Add Image</h3>
+            <form id="imageForm">
+                <div class="form-group">
+                    <label for="imageLink">Image Link *</label>
+                    <input type="url" id="imageLink" required>
+                </div>
+                <div class="form-group">
+                    <label for="imageUrl">Link (Optional)</label>
+                    <input type="url" id="imageUrl">
+                </div>
+                <div class="form-group">
+                    <label for="imageFetish">Fetish Category (Optional)</label>
+                    <input type="text" id="imageFetish" placeholder="e.g., Bondage, Latex, etc.">
+                </div>
+                <button type="submit" class="btn-primary">Save Image</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Banner Modal -->
+    <div id="bannerModal" class="modal">
+        <div class="modal-content small">
+            <button class="modal-close" onclick="closeBannerModal()">&times;</button>
+            <h3 id="bannerModalTitle">Add Banner</h3>
+            <form id="bannerForm">
+                <div class="form-group">
+                    <label for="bannerImageLink">Image Link *</label>
+                    <input type="url" id="bannerImageLink" required>
+                </div>
+                <div class="form-group">
+                    <label for="bannerRedirectLink">Redirect Link *</label>
+                    <input type="url" id="bannerRedirectLink" required>
+                </div>
+                <div class="form-group">
+                    <label for="bannerPosition">Position *</label>
+                    <select id="bannerPosition" required>
+                        <option value="">Select Position</option>
+                        <option value="top-left">Top Left</option>
+                        <option value="top-center">Top Center</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="left">Left Side</option>
+                        <option value="right">Right Side</option>
+                        <option value="between">Between Content</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Save Banner</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; <span id="yearFooter"></span> imageporn Admin. All rights reserved.</p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+    <script>
+        document.getElementById('yearFooter').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
