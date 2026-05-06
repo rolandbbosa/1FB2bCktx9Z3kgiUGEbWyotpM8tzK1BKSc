@@ -189,6 +189,9 @@ function openImageModal(imageId) {
     const viewMoreBtn = document.getElementById('viewMoreBtn');
 
     modalImage.src = image.imageLink;
+    modalImage.onclick = () => {
+        window.open(image.imageLink, '_blank');
+    };
     
     if (image.imageUrl) {
         viewMoreBtn.style.display = 'block';
@@ -227,6 +230,8 @@ function setActiveNav(nav, updateHash = true) {
         window.location.hash = hashMap[nav];
     }
 
+    closeHamburgerMenu();
+
     // Reset pagination when switching
     if (nav === 'images') {
         currentPage = 1;
@@ -234,6 +239,19 @@ function setActiveNav(nav, updateHash = true) {
     } else if (nav === 'fetish') {
         currentFetishPage = 1;
         renderFetishGrid();
+    }
+}
+
+function closeHamburgerMenu() {
+    const navLinks = document.querySelector('.nav-links');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+
+    if (navLinks && navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+    }
+
+    if (hamburgerBtn && hamburgerBtn.classList.contains('active')) {
+        hamburgerBtn.classList.remove('active');
     }
 }
 
