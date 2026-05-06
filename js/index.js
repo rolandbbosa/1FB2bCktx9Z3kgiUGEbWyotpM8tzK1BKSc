@@ -64,6 +64,15 @@ function setupEventListeners() {
     if (ageYesBtn) {
         ageYesBtn.addEventListener('click', setAgeVerified);
     }
+
+    // Hamburger menu
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', () => {
+            document.querySelector('.nav-links').classList.toggle('active');
+            hamburgerBtn.classList.toggle('active');
+        });
+    }
 }
 
 // ===== IMAGE LOADING =====
