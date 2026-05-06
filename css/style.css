@@ -66,6 +66,36 @@ body {
     border-bottom-color: var(--primary-color);
 }
 
+/* Hamburger Menu */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.hamburger-line {
+    width: 25px;
+    height: 3px;
+    background-color: var(--text-light);
+    margin: 3px 0;
+    transition: 0.3s;
+}
+
+.hamburger.active .hamburger-line:nth-child(1) {
+    transform: rotate(-45deg) translate(-5px, 6px);
+}
+
+.hamburger.active .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.active .hamburger-line:nth-child(3) {
+    transform: rotate(45deg) translate(-5px, -6px);
+}
+
 /* Buttons */
 .btn-primary,
 .btn-secondary,
@@ -637,9 +667,51 @@ body {
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+    .container {
+        grid-template-columns: 150px 1fr 150px;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .images-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+
+    .banners-top {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .banners-between {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+}
+
 @media (max-width: 768px) {
+    .nav-links {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background-color: var(--dark-bg);
+        flex-direction: column;
+        gap: 0;
+        padding: 1rem 0;
+        display: none;
+        border-top: 2px solid var(--primary-color);
+    }
+
+    .nav-links.active {
+        display: flex;
+    }
+
+    .hamburger {
+        display: flex;
+    }
+
     .container {
         grid-template-columns: 1fr;
+        padding: 1rem;
     }
 
     .content {
@@ -683,5 +755,59 @@ body {
 
     .images-grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .banners-top {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+
+    .banners-between {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-container {
+        padding: 0.5rem 1rem;
+    }
+
+    .nav-brand {
+        font-size: 1.4rem;
+    }
+
+    .container {
+        padding: 0.5rem;
+    }
+
+    .images-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+
+    .modal-content {
+        padding: 1rem;
+        width: 95%;
+    }
+
+    .age-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .age-buttons button {
+        width: 100%;
+    }
+
+    .banners-top {
+        padding: 0.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+
+    .banners-between {
+        padding: 1rem 0.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+
+    .footer {
+        padding: 1rem 0.5rem;
     }
 }
