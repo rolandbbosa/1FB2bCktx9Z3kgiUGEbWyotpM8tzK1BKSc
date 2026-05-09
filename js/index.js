@@ -161,7 +161,11 @@ function renderPagination() {
     pagination.appendChild(prevBtn);
 
     // Page numbers
-    for (let i = 1; i <= totalPages; i++) {
+    const maxButtons = window.innerWidth <= 768 ? 2 : 4;
+    let startPage = Math.max(1, Math.min(currentPage - 1, totalPages - maxButtons + 1));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+    for (let i = startPage; i <= endPage; i++) {
         const btn = document.createElement('button');
         btn.textContent = i;
         btn.className = i === currentPage ? 'active' : '';
@@ -508,7 +512,11 @@ function renderFetishPagination(totalItems) {
     pagination.appendChild(prevBtn);
 
     // Page numbers
-    for (let i = 1; i <= totalPages; i++) {
+    const maxButtons = window.innerWidth <= 768 ? 2 : 4;
+    let startPage = Math.max(1, Math.min(currentFetishPage - 1, totalPages - maxButtons + 1));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+    for (let i = startPage; i <= endPage; i++) {
         const btn = document.createElement('button');
         btn.textContent = i;
         btn.className = i === currentFetishPage ? 'active' : '';
