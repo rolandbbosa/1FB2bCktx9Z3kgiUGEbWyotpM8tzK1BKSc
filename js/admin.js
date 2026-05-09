@@ -345,3 +345,82 @@ async function deleteBanner(id) {
         }
     }
 }
+
+async function downloadDataCsv() {
+    try {
+        const [imagesSnapshot, bannersSnapshot] = await Promise.all([
+            db.collection(COLLECTIONS.IMAGES).orderBy('createdAt', 'desc').get(),
+            db.collection(COLLECTIONS.BANNERS).get()
+        ]);
+
+        const imagesData = [];
+        const fetishSet = new Set();
+
+        imagesSnapshot.forEach(doc => {
+            const data = doc.data();
+            imagesData.push({ id: doc.id, ...data });
+            if (data.fetish) {
+                fetishSet.add(data.fetish);
+            }
+        });
+
+        const uniqueFetishes = Array.from(fetishSet).sort();
+        const headers = [
+            'type',
+            'id',
+            'imageLink',
+            'imageUrl',
+            'fetish',
+            ...uniqueFetishes.map(f => `fetish:${f}`),
+            'bannerImageLink',
+            'bannerRedirectLink',
+            'bannerPosition'
+        ];
+
+        const rows = [headers];
+
+        imagesData.forEach(image => {
+            const fetish = image.fetish || '';
+            const fetishFlags = uniqueFetishes.map(f => (f === fetish ? '1' : ''));
+            rows.push([
+                'image',
+                image.id,
+                image.imageLink || '',
+                image.imageUrl || '',
+                fetish,
+                ...fetishFlags,
+                '',
+                '',
+                ''
+            ]);
+        });
+
+        bannersSnapshot.forEach(doc => {
+            const data = doc.data();
+            rows.push([
+                'banner',
+                doc.id,
+                '',
+                '',
+                '',
+                ...uniqueFetishes.map(() => ''),
+                data.imageLink || '',
+                data.redirectLink || '',
+                data.position || ''
+            ]);
+        });
+
+        const csvContent = rows.map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `imageporn-data-${new Date().toISOString().slice(0,10)}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        alert('Error exporting CSV: ' + error.message);
+    }
+}
