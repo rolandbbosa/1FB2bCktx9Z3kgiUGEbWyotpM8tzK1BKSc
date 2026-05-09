@@ -20,12 +20,13 @@ function exitPage() {
 
 let allImages = [];
 let currentPage = 1;
-const itemsPerPage = 10;
+const itemsPerPage = 12;
 let allBanners = [];
 let currentRandomImage = null;
 let allFetishes = [];
 let currentFetishFilter = '';
 let currentFetishPage = 1;
+let currentImageModalId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAgeVerification();
@@ -49,6 +50,13 @@ function setupEventListeners() {
     // Click outside modal to close
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
+            closeImageModal();
+        }
+    });
+
+    // Close image modal on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
             closeImageModal();
         }
     });
@@ -87,6 +95,7 @@ async function loadImages() {
         loadRandomImage();
         renderImagesGrid();
         populateFetishDropdown();
+        handleHashChange();
     } catch (error) {
         console.error('Error loading images:', error);
     }
@@ -145,7 +154,7 @@ function renderPagination() {
     prevBtn.addEventListener('click', () => {
         if (currentPage > 1) {
             currentPage--;
-            renderImagesGrid();
+            window.location.hash = buildHash('images', currentPage, currentImageModalId);
             document.querySelector('.section.active').scrollIntoView({ behavior: 'smooth' });
         }
     });
@@ -158,7 +167,7 @@ function renderPagination() {
         btn.className = i === currentPage ? 'active' : '';
         btn.addEventListener('click', () => {
             currentPage = i;
-            renderImagesGrid();
+            window.location.hash = buildHash('images', currentPage, currentImageModalId);
             document.querySelector('.section.active').scrollIntoView({ behavior: 'smooth' });
         });
         pagination.appendChild(btn);
@@ -171,7 +180,7 @@ function renderPagination() {
     nextBtn.addEventListener('click', () => {
         if (currentPage < totalPages) {
             currentPage++;
-            renderImagesGrid();
+            window.location.hash = buildHash('images', currentPage, currentImageModalId);
             document.querySelector('.section.active').scrollIntoView({ behavior: 'smooth' });
         }
     });
@@ -180,7 +189,7 @@ function renderPagination() {
 
 // ===== IMAGE MODAL =====
 
-function openImageModal(imageId) {
+function openImageModal(imageId, shouldUpdateHash = true) {
     const image = allImages.find(img => img.id === imageId) || currentRandomImage;
     if (!image) return;
 
@@ -202,11 +211,32 @@ function openImageModal(imageId) {
         viewMoreBtn.style.display = 'none';
     }
 
+    currentImageModalId = imageId;
     modal.classList.add('active');
+
+    if (shouldUpdateHash) {
+        const sectionNav = getActiveSectionHash();
+        const page = sectionNav === '#Images' ? currentPage : sectionNav === '#Fetish' ? currentFetishPage : null;
+        window.location.hash = buildHash(getNavFromHash(sectionNav), page, imageId);
+    }
 }
 
 function closeImageModal() {
-    document.getElementById('imageModal').classList.remove('active');
+    const modal = document.getElementById('imageModal');
+    if (!modal.classList.contains('active')) return;
+
+    modal.classList.remove('active');
+    currentImageModalId = null;
+
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    if (hash.includes('/image-')) {
+        const baseHash = hash.split('/image-')[0] || '#Random-images';
+        history.replaceState(null, '', baseHash);
+    } else if (hash.startsWith('#image-')) {
+        history.replaceState(null, '', '#Random-images');
+    }
 }
 
 // ===== NAVIGATION =====
@@ -228,17 +258,26 @@ function setActiveNav(nav, updateHash = true) {
 
     if (updateHash) {
         window.location.hash = hashMap[nav];
+        return;
     }
 
     closeHamburgerMenu();
 
-    // Reset pagination when switching
-    if (nav === 'images') {
-        currentPage = 1;
-        renderImagesGrid();
-    } else if (nav === 'fetish') {
-        currentFetishPage = 1;
-        renderFetishGrid();
+    // Reset pagination when switching tabs (but not when loading from hash)
+    if (updateHash) {
+        if (nav === 'images') {
+            currentPage = 1;
+            renderImagesGrid();
+        } else if (nav === 'fetish') {
+            currentFetishPage = 1;
+            renderFetishGrid();
+        }
+    } else {
+        if (nav === 'images') {
+            renderImagesGrid();
+        } else if (nav === 'fetish') {
+            renderFetishGrid();
+        }
     }
 }
 
@@ -255,17 +294,90 @@ function closeHamburgerMenu() {
     }
 }
 
-function getNavFromHash() {
-    const hash = window.location.hash.toLowerCase();
-    if (hash === '#random-images') return 'random';
-    if (hash === '#images') return 'images';
-    if (hash === '#fetish') return 'fetish';
+function getNavFromHash(hash) {
+    const normalizedHash = hash.toLowerCase();
+    if (normalizedHash === '#random-images') return 'random';
+    if (normalizedHash === '#images') return 'images';
+    if (normalizedHash === '#fetish') return 'fetish';
     return 'random';
 }
 
+function buildHash(nav, page = null, imageId = null) {
+    const hashMap = {
+        random: '#Random-images',
+        images: '#Images',
+        fetish: '#Fetish'
+    };
+
+    const parts = [hashMap[nav] || '#Random-images'];
+    if (page && page > 1 && (nav === 'images' || nav === 'fetish')) {
+        parts.push(`page-${page}`);
+    }
+    if (imageId) {
+        parts.push(`image-${imageId}`);
+    }
+    return parts.join('/');
+}
+
+function getActiveSectionHash() {
+    const activeSection = document.querySelector('.section.active');
+    if (!activeSection) return '#Random-images';
+
+    switch (activeSection.id) {
+        case 'images-section':
+            return '#Images';
+        case 'fetish-section':
+            return '#Fetish';
+        default:
+            return '#Random-images';
+    }
+}
+
+function parseHash() {
+    const rawHash = window.location.hash.slice(1);
+    if (!rawHash) return { nav: 'random', page: 1, imageId: null };
+
+    const parts = rawHash.split('/');
+    let nav = 'random';
+    let page = 1;
+    let imageId = null;
+
+    if (parts[0].startsWith('image-')) {
+        nav = 'images';
+        imageId = parts[0].slice(6);
+    } else {
+        nav = getNavFromHash('#' + parts[0]);
+        for (let i = 1; i < parts.length; i++) {
+            const part = parts[i];
+            if (part.startsWith('page-')) {
+                page = parseInt(part.slice(5), 10) || 1;
+            } else if (part.startsWith('image-')) {
+                imageId = part.slice(6);
+            }
+        }
+    }
+
+    return { nav, page, imageId };
+}
+
 function handleHashChange() {
-    const nav = getNavFromHash();
+    const { nav, page, imageId } = parseHash();
+
+    if (nav === 'images') {
+        currentPage = page;
+    } else if (nav === 'fetish') {
+        currentFetishPage = page;
+    }
+
     setActiveNav(nav, false);
+
+    if (imageId) {
+        if (currentImageModalId !== imageId) {
+            openImageModal(imageId, false);
+        }
+    } else {
+        closeImageModal();
+    }
 }
 
 // ===== BANNERS =====
@@ -389,7 +501,7 @@ function renderFetishPagination(totalItems) {
     prevBtn.addEventListener('click', () => {
         if (currentFetishPage > 1) {
             currentFetishPage--;
-            renderFetishGrid();
+            window.location.hash = buildHash('fetish', currentFetishPage, currentImageModalId);
             document.querySelector('#fetish-section').scrollIntoView({ behavior: 'smooth' });
         }
     });
@@ -402,7 +514,7 @@ function renderFetishPagination(totalItems) {
         btn.className = i === currentFetishPage ? 'active' : '';
         btn.addEventListener('click', () => {
             currentFetishPage = i;
-            renderFetishGrid();
+            window.location.hash = buildHash('fetish', currentFetishPage, currentImageModalId);
             document.querySelector('#fetish-section').scrollIntoView({ behavior: 'smooth' });
         });
         pagination.appendChild(btn);
@@ -415,7 +527,7 @@ function renderFetishPagination(totalItems) {
     nextBtn.addEventListener('click', () => {
         if (currentFetishPage < totalPages) {
             currentFetishPage++;
-            renderFetishGrid();
+            window.location.hash = buildHash('fetish', currentFetishPage, currentImageModalId);
             document.querySelector('#fetish-section').scrollIntoView({ behavior: 'smooth' });
         }
     });
