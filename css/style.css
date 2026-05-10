@@ -399,6 +399,18 @@ body {
     margin-bottom: 1rem;
 }
 
+.admin-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-filter .form-group {
+    margin-bottom: 0;
+    min-width: 220px;
+}
+
 .form-group label {
     display: block;
     margin-bottom: 0.5rem;
@@ -653,19 +665,22 @@ body {
 }
 
 /* Fetish Filter */
-.fetish-filter {
+.fetish-filter,
+.image-filter {
     margin-bottom: 2rem;
     display: flex;
     align-items: center;
     gap: 1rem;
 }
 
-.fetish-filter label {
+.fetish-filter label,
+.image-filter label {
     font-weight: 600;
     color: var(--text-light);
 }
 
-.fetish-filter select {
+.fetish-filter select,
+.image-filter select {
     padding: 0.75rem 1rem;
     background-color: var(--darker-bg);
     border: 2px solid var(--primary-color);
@@ -678,12 +693,15 @@ body {
 }
 
 .fetish-filter select:hover,
-.fetish-filter select:focus {
+.fetish-filter select:focus,
+.image-filter select:hover,
+.image-filter select:focus {
     outline: none;
     box-shadow: 0 0 5px rgba(139, 0, 0, 0.3);
 }
 
-.fetish-filter option {
+.fetish-filter option,
+.image-filter option {
     background-color: var(--dark-bg);
     color: var(--text-light);
     text-transform: capitalize;
