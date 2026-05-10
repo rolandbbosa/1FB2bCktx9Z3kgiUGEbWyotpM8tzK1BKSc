@@ -231,8 +231,10 @@ function openImageModal(imageId, shouldUpdateHash = true) {
     const viewMoreBtn = document.getElementById('viewMoreBtn');
 
     modalImage.src = image.imageLink;
+    modalImage.style.cursor = 'pointer';
     modalImage.onclick = () => {
-        window.open(image.imageLink, '_blank');
+        const targetUrl = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}https://imageporn.xyz/imageview/imageview?link=${encodeURIComponent(image.imageUrl || image.imageLink)}`;
+        window.location.href = targetUrl;
     };
     
     if (image.imageUrl) {
