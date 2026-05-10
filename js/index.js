@@ -233,7 +233,7 @@ function openImageModal(imageId, shouldUpdateHash = true) {
     modalImage.src = image.imageLink;
     modalImage.style.cursor = 'pointer';
     modalImage.onclick = () => {
-        const targetUrl = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}https://imageporn.xyz/imageview/imageview?link=${encodeURIComponent(image.imageUrl || image.imageLink)}`;
+        const targetUrl = `https://imageporn.xyz/imageview?link=${encodeURIComponent(image.imageUrl || image.imageLink)}`;
         window.location.href = targetUrl;
     };
     
