@@ -4,6 +4,45 @@ let currentImageEdit = null;
 let currentBannerEdit = null;
 let allImages = [];
 let allBanners = [];
+let currentAdminMediaFilter = 'images';
+let currentAdminFetishFilter = '';
+
+function isGif(url) {
+    return /\.(gif)(\?.*)?$/i.test(url || '');
+}
+
+function filterAdminImages() {
+    const mediaDropdown = document.getElementById('mediaTypeDropdown');
+    const fetishDropdown = document.getElementById('adminFetishDropdown');
+
+    currentAdminMediaFilter = mediaDropdown ? mediaDropdown.value : 'images';
+    currentAdminFetishFilter = fetishDropdown ? fetishDropdown.value : '';
+    renderImagesList();
+}
+
+function populateAdminFetishDropdown() {
+    const dropdown = document.getElementById('adminFetishDropdown');
+    if (!dropdown) return;
+
+    const fetishSet = new Set();
+    allImages.forEach(img => {
+        if (img.fetish) fetishSet.add(img.fetish);
+    });
+
+    const previousSelection = dropdown.value;
+    dropdown.innerHTML = '<option value="">All Fetishes</option>';
+
+    Array.from(fetishSet).sort().forEach(fetish => {
+        const option = document.createElement('option');
+        option.value = fetish;
+        option.textContent = fetish.toUpperCase();
+        dropdown.appendChild(option);
+    });
+
+    if (previousSelection) {
+        dropdown.value = previousSelection;
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAdminAccess();
@@ -45,6 +84,7 @@ async function loadImages() {
         snapshot.forEach(doc => {
             allImages.push({ id: doc.id, ...doc.data() });
         });
+        populateAdminFetishDropdown();
         renderImagesList();
     } catch (error) {
         console.error('Error loading images:', error);
@@ -60,7 +100,28 @@ function renderImagesList() {
         return;
     }
 
-    allImages.forEach(image => {
+    const filteredImages = allImages.filter(image => {
+        if (currentAdminMediaFilter === 'gifs') return isGif(image.imageLink);
+        if (currentAdminMediaFilter === 'images') return !isGif(image.imageLink);
+        return true;
+    });
+
+    const selectedFetish = currentAdminFetishFilter.trim().toLowerCase();
+    const displayImages = selectedFetish
+        ? filteredImages.filter(image => (image.fetish || '').toLowerCase() === selectedFetish)
+        : filteredImages;
+
+    if (displayImages.length === 0) {
+        const emptyText = selectedFetish
+            ? 'No images match this fetish and media type.'
+            : currentAdminMediaFilter === 'gifs'
+                ? 'No GIFs available'
+                : 'No images available';
+        list.innerHTML = `<p style="text-align: center; color: var(--text-muted);">${emptyText}</p>`;
+        return;
+    }
+
+    displayImages.forEach(image => {
         const item = document.createElement('div');
         item.className = 'list-item';
         item.innerHTML = `
