@@ -33,6 +33,21 @@
                     <h2>Image Management</h2>
                     <button class="btn-primary" onclick="openImageModal()">+ Add Image</button>
                 </div>
+                <div class="admin-filter">
+                    <div class="form-group">
+                        <label for="mediaTypeDropdown">Media Type:</label>
+                        <select id="mediaTypeDropdown" onchange="filterAdminImages()">
+                            <option value="images">Images only</option>
+                            <option value="gifs">GIFs only</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminFetishDropdown">Fetish:</label>
+                        <select id="adminFetishDropdown" onchange="filterAdminImages()">
+                            <option value="">All Fetishes</option>
+                        </select>
+                    </div>
+                </div>
                 <div id="imagesList" class="images-list"></div>
             </section>
 
