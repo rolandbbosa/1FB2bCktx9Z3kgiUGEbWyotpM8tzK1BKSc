@@ -25,8 +25,28 @@ let allBanners = [];
 let currentRandomImage = null;
 let allFetishes = [];
 let currentFetishFilter = '';
+let currentImageTypeFilter = 'images';
+let currentFetishTypeFilter = 'images';
 let currentFetishPage = 1;
 let currentImageModalId = null;
+
+function isGif(url) {
+    return /\.(gif)(\?.*)?$/i.test(url || '');
+}
+
+function filterImageType(section) {
+    if (section === 'images') {
+        const dropdown = document.getElementById('mediaTypeDropdown');
+        currentImageTypeFilter = dropdown ? dropdown.value : 'images';
+        currentPage = 1;
+        renderImagesGrid();
+    } else if (section === 'fetish') {
+        const dropdown = document.getElementById('fetishMediaTypeDropdown');
+        currentFetishTypeFilter = dropdown ? dropdown.value : 'images';
+        currentFetishPage = 1;
+        renderFetishGrid();
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAgeVerification();
@@ -119,15 +139,23 @@ async function loadRandomImage() {
 // ===== IMAGES GRID WITH PAGINATION =====
 
 function renderImagesGrid() {
+    const filteredImages = allImages.filter(img => {
+        if (currentImageTypeFilter === 'gifs') return isGif(img.imageLink);
+        return !isGif(img.imageLink);
+    });
+
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    const paginatedImages = allImages.slice(start, end);
+    const paginatedImages = filteredImages.slice(start, end);
 
     const grid = document.getElementById('imagesGrid');
     grid.innerHTML = '';
 
-    if (allImages.length === 0) {
-        grid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-muted);">No images available</p>';
+    if (filteredImages.length === 0) {
+        const emptyText = currentImageTypeFilter === 'gifs'
+            ? 'No GIFs available'
+            : 'No images available';
+        grid.innerHTML = `<p style="text-align: center; grid-column: 1 / -1; color: var(--text-muted);">${emptyText}</p>`;
     } else {
         paginatedImages.forEach(image => {
             const item = document.createElement('div');
@@ -137,11 +165,12 @@ function renderImagesGrid() {
         });
     }
 
-    renderPagination();
+    renderPagination(filteredImages.length);
 }
 
-function renderPagination() {
-    const totalPages = Math.ceil(allImages.length / itemsPerPage);
+function renderPagination(totalItems = null) {
+    const count = totalItems !== null ? totalItems : allImages.length;
+    const totalPages = Math.ceil(count / itemsPerPage);
     const pagination = document.getElementById('pagination');
     pagination.innerHTML = '';
 
@@ -464,10 +493,13 @@ function filterByFetish() {
 }
 
 function renderFetishGrid() {
-    let filteredImages = allImages;
+    let filteredImages = allImages.filter(img => {
+        if (currentFetishTypeFilter === 'gifs') return isGif(img.imageLink);
+        return !isGif(img.imageLink);
+    });
 
     if (currentFetishFilter) {
-        filteredImages = allImages.filter(img => img.fetish === currentFetishFilter);
+        filteredImages = filteredImages.filter(img => img.fetish === currentFetishFilter);
     }
 
     const start = (currentFetishPage - 1) * itemsPerPage;
@@ -478,7 +510,10 @@ function renderFetishGrid() {
     grid.innerHTML = '';
 
     if (filteredImages.length === 0) {
-        grid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-muted);">No images in this category</p>';
+        const emptyText = currentFetishTypeFilter === 'gifs'
+            ? 'No GIFs found for this category'
+            : 'No images found for this category';
+        grid.innerHTML = `<p style="text-align: center; grid-column: 1 / -1; color: var(--text-muted);">${emptyText}</p>`;
     } else {
         paginatedImages.forEach(image => {
             const item = document.createElement('div');
