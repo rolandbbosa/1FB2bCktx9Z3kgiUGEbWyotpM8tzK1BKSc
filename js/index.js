@@ -234,7 +234,7 @@ function openImageModal(imageId, shouldUpdateHash = true) {
     modalImage.style.cursor = 'pointer';
     modalImage.onclick = () => {
         const targetUrl = `https://imageporn.xyz/imageview?link=${encodeURIComponent(image.imageUrl || image.imageLink)}`;
-        window.location.href = targetUrl;
+        window.open(targetUrl, '_blank');
     };
     
     if (image.imageUrl) {
