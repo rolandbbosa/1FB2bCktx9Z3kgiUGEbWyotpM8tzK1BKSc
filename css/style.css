@@ -21,6 +21,7 @@ body {
     background-color: var(--darker-bg);
     color: var(--text-light);
     line-height: 1.6;
+    overflow-x: hidden;
 }
 
 /* Navbar */
@@ -176,10 +177,10 @@ body {
 .banners-top {
     background-color: var(--dark-bg);
     border-bottom: 2px solid var(--primary-color);
-    padding: 1rem;
+    padding: 0.5rem;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.5rem;
 }
 
 .banners-side {
@@ -210,11 +211,11 @@ body {
 
 .banners-between {
     background-color: var(--dark-bg);
-    padding: 2rem;
-    margin: 2rem 0;
+    padding: 1rem;
+    margin: 1rem 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.5rem;
     border-top: 2px solid var(--primary-color);
     border-bottom: 2px solid var(--primary-color);
 }
