@@ -29,11 +29,16 @@ let currentImageTypeFilter = 'images';
 let currentFetishTypeFilter = 'images';
 let currentFetishPage = 1;
 let currentImageModalId = null;
-let recentRandomImages = []; // Track recently shown random images
-const maxRecentImages = 5; // Keep track of last 5 images to avoid immediate repeats
+let shuffledImages = []; // Shuffled array of all images for random selection
+let currentShuffleIndex = 0; // Current position in shuffled array
 
-function isGif(url) {
-    return /\.(gif)(\?.*)?$/i.test(url || '');
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
 }
 
 function filterImageType(section) {
@@ -114,6 +119,9 @@ async function loadImages() {
         snapshot.forEach(doc => {
             allImages.push({ id: doc.id, ...doc.data() });
         });
+        // Initialize shuffled array for random selection
+        shuffledImages = shuffleArray(allImages);
+        currentShuffleIndex = 0;
         loadRandomImage();
         renderImagesGrid();
         populateFetishDropdown();
@@ -131,24 +139,15 @@ async function loadRandomImage() {
         return;
     }
 
-    // Get available images that haven't been shown recently
-    let availableImages = allImages.filter(img => !recentRandomImages.includes(img.id));
-
-    // If all images have been shown recently, reset the list (but keep the last one to avoid immediate repeat)
-    if (availableImages.length === 0) {
-        recentRandomImages = recentRandomImages.slice(-1); // Keep only the most recent
-        availableImages = allImages.filter(img => !recentRandomImages.includes(img.id));
+    // If we've gone through all images in the shuffled array, reshuffle
+    if (currentShuffleIndex >= shuffledImages.length) {
+        shuffledImages = shuffleArray(allImages);
+        currentShuffleIndex = 0;
     }
 
-    // Select random image from available ones
-    const randomIndex = Math.floor(Math.random() * availableImages.length);
-    currentRandomImage = availableImages[randomIndex];
-
-    // Add to recent images list
-    recentRandomImages.push(currentRandomImage.id);
-    if (recentRandomImages.length > maxRecentImages) {
-        recentRandomImages.shift(); // Remove oldest
-    }
+    // Get the next image from the shuffled array
+    currentRandomImage = shuffledImages[currentShuffleIndex];
+    currentShuffleIndex++;
 
     const container = document.getElementById('randomImageContainer');
     container.innerHTML = `<img src="${currentRandomImage.imageLink}" alt="Random Image" onclick="openImageModal('${currentRandomImage.id}')">`;
