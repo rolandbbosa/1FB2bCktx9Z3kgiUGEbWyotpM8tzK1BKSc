@@ -29,6 +29,8 @@ let currentImageTypeFilter = 'images';
 let currentFetishTypeFilter = 'images';
 let currentFetishPage = 1;
 let currentImageModalId = null;
+let recentRandomImages = []; // Track recently shown random images
+const maxRecentImages = 5; // Keep track of last 5 images to avoid immediate repeats
 
 function isGif(url) {
     return /\.(gif)(\?.*)?$/i.test(url || '');
@@ -129,9 +131,25 @@ async function loadRandomImage() {
         return;
     }
 
-    const randomIndex = Math.floor(Math.random() * allImages.length);
-    currentRandomImage = allImages[randomIndex];
-    
+    // Get available images that haven't been shown recently
+    let availableImages = allImages.filter(img => !recentRandomImages.includes(img.id));
+
+    // If all images have been shown recently, reset the list (but keep the last one to avoid immediate repeat)
+    if (availableImages.length === 0) {
+        recentRandomImages = recentRandomImages.slice(-1); // Keep only the most recent
+        availableImages = allImages.filter(img => !recentRandomImages.includes(img.id));
+    }
+
+    // Select random image from available ones
+    const randomIndex = Math.floor(Math.random() * availableImages.length);
+    currentRandomImage = availableImages[randomIndex];
+
+    // Add to recent images list
+    recentRandomImages.push(currentRandomImage.id);
+    if (recentRandomImages.length > maxRecentImages) {
+        recentRandomImages.shift(); // Remove oldest
+    }
+
     const container = document.getElementById('randomImageContainer');
     container.innerHTML = `<img src="${currentRandomImage.imageLink}" alt="Random Image" onclick="openImageModal('${currentRandomImage.id}')">`;
 }
