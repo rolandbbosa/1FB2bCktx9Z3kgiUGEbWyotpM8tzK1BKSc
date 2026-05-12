@@ -29,16 +29,9 @@ let currentImageTypeFilter = 'images';
 let currentFetishTypeFilter = 'images';
 let currentFetishPage = 1;
 let currentImageModalId = null;
-let shuffledImages = []; // Shuffled array of all images for random selection
-let currentShuffleIndex = 0; // Current position in shuffled array
 
-function shuffleArray(array) {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
+function isGif(url) {
+    return /\.(gif)(\?.*)?$/i.test(url || '');
 }
 
 function filterImageType(section) {
@@ -119,9 +112,6 @@ async function loadImages() {
         snapshot.forEach(doc => {
             allImages.push({ id: doc.id, ...doc.data() });
         });
-        // Initialize shuffled array for random selection
-        shuffledImages = shuffleArray(allImages);
-        currentShuffleIndex = 0;
         loadRandomImage();
         renderImagesGrid();
         populateFetishDropdown();
@@ -139,16 +129,9 @@ async function loadRandomImage() {
         return;
     }
 
-    // If we've gone through all images in the shuffled array, reshuffle
-    if (currentShuffleIndex >= shuffledImages.length) {
-        shuffledImages = shuffleArray(allImages);
-        currentShuffleIndex = 0;
-    }
-
-    // Get the next image from the shuffled array
-    currentRandomImage = shuffledImages[currentShuffleIndex];
-    currentShuffleIndex++;
-
+    const randomIndex = Math.floor(Math.random() * allImages.length);
+    currentRandomImage = allImages[randomIndex];
+    
     const container = document.getElementById('randomImageContainer');
     container.innerHTML = `<img src="${currentRandomImage.imageLink}" alt="Random Image" onclick="openImageModal('${currentRandomImage.id}')">`;
 }
