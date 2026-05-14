@@ -183,6 +183,7 @@ async function renderTrendingPage() {
             const cCount   = comments.filter(c => c.post_id === pId).length;
             const thumbHtml = getFirstMediaThumb(post.message);
             const snippet   = firstCommentSnippet(pId, comments);
+            const dateStr   = post.timestamp ? new Date(post.timestamp * 1000).toLocaleDateString() : '';
 
             feedHtml += `<div class="post-preview">
                 ${thumbHtml ? `<div class="post-thumb">${thumbHtml}</div>` : ''}
@@ -191,7 +192,7 @@ async function renderTrendingPage() {
                         ${highlightTrend(post.title || 'Untitled', activeTrend)}
                     </a>
                     <div class="snippet">${highlightTrend(snippet, activeTrend)}</div>
-                    <div class="tagline">By ${escapeHtml(post.anon || 'Anon')} • ${cCount} comments</div>
+                    <div class="tagline">By ${escapeHtml(post.anon || 'Anon')}${dateStr ? ' on ' + dateStr : ''} • ${cCount} comments</div>
                 </div>
             </div>`;
         });
