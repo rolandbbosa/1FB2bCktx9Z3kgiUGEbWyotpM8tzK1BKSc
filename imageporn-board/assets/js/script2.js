@@ -49,11 +49,12 @@ function renderFeedView(posts, comments) {
     }
 
     posts.forEach(post => {
+        const dateStr = post.timestamp ? new Date(post.timestamp * 1000).toLocaleDateString() : '';
         const el = document.createElement('div');
         el.className = 'post';
         el.innerHTML = `<div class="entry">
             <a href="index.html?id=${post.post_id}" class="title">${post.title}</a>
-            <p class="tagline">submitted by ${post.anon}</p>
+            <p class="tagline">submitted by ${post.anon}${dateStr ? ' on ' + dateStr : ''}</p>
             <div class="expando">
                 <div class="text-content">${linkify(post.message)}</div>
                 ${parseMedia(post.message)}
@@ -78,10 +79,11 @@ function renderSinglePostView(postId, posts, comments) {
     document.getElementById('submit-section').innerHTML = '';
     document.getElementById('nav-actions').innerHTML = '<a href="index.html" class="toggle-btn">← back to feed</a>';
 
+    const dateStr = post.timestamp ? new Date(post.timestamp * 1000).toLocaleDateString() : '';
     const feed = document.getElementById('feed');
     feed.innerHTML = `<div class="post single-view">
         <h1 class="title">${post.title}</h1>
-        <p class="tagline">by ${post.anon}</p>
+        <p class="tagline">by ${post.anon}${dateStr ? ' on ' + dateStr : ''}</p>
         <div class="expando large">
             <div class="text-content">${linkify(post.message)}</div>
             ${parseMedia(post.message)}
