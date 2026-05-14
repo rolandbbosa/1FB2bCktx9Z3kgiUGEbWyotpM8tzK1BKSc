@@ -163,6 +163,11 @@ window.addComment = async function(postId, parentId) {
     const val = el.value.trim();
     if (!val) return;
 
+    if (typeof window.ensureSubmitVerified === 'function') {
+        const verified = await window.ensureSubmitVerified();
+        if (!verified) return;
+    }
+
     const btn = el.nextElementSibling;
     if (btn) { btn.disabled = true; btn.innerText = 'Saving...'; }
 
