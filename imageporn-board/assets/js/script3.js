@@ -62,6 +62,7 @@ function renderSingleCommentHtml(c, postId, allComments, recursive, threadClass)
     return `<div class="comment${threadClass ? ' ' + threadClass : ''}">
         <p class="tagline">${c.anon} • ${timeStr}${replyText}</p>
         <div class="md">${linkify(c.text)}</div>
+        ${parseMedia(c.text)}
         <ul class="flat-list"><li><a href="javascript:void(0)" onclick="window.showReplyBox('${c.id}')">reply</a></li></ul>
         <div id="box-${c.id}" class="hidden reply-input">
             <textarea id="in-${c.id}" placeholder="Your reply..." style="resize: none; width:100%; height:40px; overflow:hidden;"></textarea>
