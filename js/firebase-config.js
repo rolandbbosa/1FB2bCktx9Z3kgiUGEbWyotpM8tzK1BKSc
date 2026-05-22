@@ -20,6 +20,7 @@ const auth = firebase.auth();
 const COLLECTIONS = {
     IMAGES: 'images',
     BANNERS: 'banners',
+    VIDEOS: 'videos',
     USERS: 'users'
 };
 
@@ -42,7 +43,6 @@ function checkAdminAccess() {
         }
     });
 }
-
 
 
 
