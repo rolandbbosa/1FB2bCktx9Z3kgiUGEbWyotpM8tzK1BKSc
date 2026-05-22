@@ -2,8 +2,12 @@
 
 let currentImageEdit = null;
 let currentBannerEdit = null;
+let currentVideoEdit = null;
+let currentPrerollEdit = null;
 let allImages = [];
 let allBanners = [];
+let allVideos = [];
+let allPrerollAds = [];
 let currentAdminMediaFilter = 'images';
 let currentAdminFetishFilter = '';
 
@@ -48,12 +52,15 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAdminAccess();
     loadImages();
     loadBanners();
+    loadVideos();
+    loadPrerollAds();
     setupEventListeners();
 });
 
 function setupEventListeners() {
     const imageForm = document.getElementById('imageForm');
     const bannerForm = document.getElementById('bannerForm');
+    const videoForm = document.getElementById('videoForm');
 
     if (imageForm) {
         imageForm.addEventListener('submit', handleImageSubmit);
@@ -61,6 +68,15 @@ function setupEventListeners() {
 
     if (bannerForm) {
         bannerForm.addEventListener('submit', handleBannerSubmit);
+    }
+
+    if (videoForm) {
+        videoForm.addEventListener('submit', handleVideoSubmit);
+    }
+
+    const prerollForm = document.getElementById('prerollForm');
+    if (prerollForm) {
+        prerollForm.addEventListener('submit', handlePrerollSubmit);
     }
 }
 
@@ -82,7 +98,9 @@ async function loadImages() {
         const snapshot = await db.collection(COLLECTIONS.IMAGES).orderBy('createdAt', 'desc').get();
         allImages = [];
         snapshot.forEach(doc => {
-            allImages.push({ id: doc.id, ...doc.data() });
+            const data = doc.data();
+            if (data.type === 'video' || data.type === 'preroll') return;
+            allImages.push({ id: doc.id, ...data });
         });
         populateAdminFetishDropdown();
         renderImagesList();
@@ -294,6 +312,233 @@ async function loadBanners() {
         renderBannersList();
     } catch (error) {
         console.error('Error loading banners:', error);
+    }
+}
+
+// ===== VIDEO MANAGEMENT =====
+
+async function loadVideos() {
+    try {
+        const snapshot = await db.collection(COLLECTIONS.IMAGES).orderBy('createdAt', 'desc').get();
+        allVideos = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const hasVideoLink = !!data.videoLink || !!data.videoUrl || !!data.link || !!data.url || !!data.src;
+            if (data.type === 'video' || (hasVideoLink && !data.imageLink && data.type !== 'preroll')) {
+                allVideos.push({ id: doc.id, ...data });
+            }
+        });
+        renderVideosList();
+    } catch (error) {
+        console.error('Error loading videos:', error);
+    }
+}
+
+function renderVideosList() {
+    const list = document.getElementById('videosList');
+    list.innerHTML = '';
+
+    if (allVideos.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No videos yet</p>';
+        return;
+    }
+
+    allVideos.forEach(video => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.innerHTML = `
+            <div class="list-item-info">
+                <p><strong>Video Link:</strong></p>
+                <p>${video.videoLink}</p>
+                ${video.title ? `<p><strong>Title:</strong> ${video.title}</p>` : '<p style="color: var(--text-muted);">No title provided</p>'}
+            </div>
+            <div class="list-item-actions">
+                <button class="btn-edit" onclick="editVideo('${video.id}')">Edit</button>
+                <button class="btn-delete" onclick="deleteVideo('${video.id}')">Delete</button>
+            </div>
+        `;
+        list.appendChild(item);
+    });
+}
+
+function openVideoModal() {
+    currentVideoEdit = null;
+    document.getElementById('videoModalTitle').textContent = 'Add Video';
+    document.getElementById('videoForm').reset();
+    document.getElementById('videoModal').classList.add('active');
+}
+
+function closeVideoModal() {
+    document.getElementById('videoModal').classList.remove('active');
+    currentVideoEdit = null;
+}
+
+function editVideo(id) {
+    const video = allVideos.find(v => v.id === id);
+    if (!video) return;
+
+    currentVideoEdit = id;
+    document.getElementById('videoModalTitle').textContent = 'Edit Video';
+    document.getElementById('videoLink').value = video.videoLink || '';
+    document.getElementById('videoTitle').value = video.title || '';
+    document.getElementById('videoModal').classList.add('active');
+}
+
+async function handleVideoSubmit(e) {
+    e.preventDefault();
+    const videoLink = document.getElementById('videoLink').value.trim();
+    const title = document.getElementById('videoTitle').value.trim();
+
+    if (!videoLink) {
+        alert('Please provide a video link.');
+        return;
+    }
+
+    try {
+        if (currentVideoEdit) {
+            await db.collection(COLLECTIONS.IMAGES).doc(currentVideoEdit).update({
+                videoLink,
+                title: title || null,
+                type: 'video',
+                updatedAt: new Date()
+            });
+        } else {
+            await db.collection(COLLECTIONS.IMAGES).add({
+                videoLink,
+                title: title || null,
+                type: 'video',
+                createdAt: new Date()
+            });
+        }
+        closeVideoModal();
+        loadVideos();
+    } catch (error) {
+        alert('Error saving video: ' + error.message);
+    }
+}
+
+async function deleteVideo(id) {
+    if (!confirm('Are you sure you want to delete this video?')) return;
+
+    try {
+        await db.collection(COLLECTIONS.IMAGES).doc(id).delete();
+        loadVideos();
+    } catch (error) {
+        alert('Error deleting video: ' + error.message);
+    }
+}
+
+// ===== PRE-ROLL AD MANAGEMENT =====
+
+async function loadPrerollAds() {
+    try {
+        const snapshot = await db.collection(COLLECTIONS.IMAGES).orderBy('createdAt', 'desc').get();
+        allPrerollAds = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.type === 'preroll') {
+                allPrerollAds.push({ id: doc.id, ...data });
+            }
+        });
+        renderPrerollAdsList();
+    } catch (error) {
+        console.error('Error loading pre-roll ads:', error);
+    }
+}
+
+function renderPrerollAdsList() {
+    const list = document.getElementById('preRollList');
+    list.innerHTML = '';
+
+    if (allPrerollAds.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No pre-roll ads yet</p>';
+        return;
+    }
+
+    allPrerollAds.forEach(ad => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.innerHTML = `
+            <div class="list-item-info">
+                <p><strong>Ad Link:</strong></p>
+                <p>${ad.adLink || ad.videoLink || ad.url || ad.link}</p>
+                ${ad.clickUrl ? `<p><strong>Click URL:</strong> <a href="${ad.clickUrl}" target="_blank" rel="noopener noreferrer">${ad.clickUrl}</a></p>` : ''}
+                ${ad.title ? `<p><strong>Title:</strong> ${ad.title}</p>` : '<p style="color: var(--text-muted);">No title provided</p>'}
+            </div>
+            <div class="list-item-actions">
+                <button class="btn-edit" onclick="editPrerollAd('${ad.id}')">Edit</button>
+                <button class="btn-delete" onclick="deletePrerollAd('${ad.id}')">Delete</button>
+            </div>
+        `;
+        list.appendChild(item);
+    });
+}
+
+function openPrerollModal() {
+    currentPrerollEdit = null;
+    document.getElementById('prerollModalTitle').textContent = 'Add Pre-roll Ad';
+    document.getElementById('prerollForm').reset();
+    document.getElementById('prerollModal').classList.add('active');
+}
+
+function closePrerollModal() {
+    document.getElementById('prerollModal').classList.remove('active');
+    currentPrerollEdit = null;
+}
+
+function editPrerollAd(id) {
+    const ad = allPrerollAds.find(item => item.id === id);
+    if (!ad) return;
+
+    currentPrerollEdit = id;
+    document.getElementById('prerollModalTitle').textContent = 'Edit Pre-roll Ad';
+    document.getElementById('adLink').value = ad.adLink || ad.videoLink || ad.url || ad.link || '';
+    document.getElementById('adTitle').value = ad.title || '';
+    document.getElementById('adClickUrl').value = ad.clickUrl || '';
+    document.getElementById('prerollModal').classList.add('active');
+}
+
+async function handlePrerollSubmit(e) {
+    e.preventDefault();
+    const adLink = document.getElementById('adLink').value.trim();
+    const title = document.getElementById('adTitle').value.trim();
+    const clickUrl = document.getElementById('adClickUrl').value.trim();
+
+    if (!adLink) {
+        alert('Please provide an ad video link.');
+        return;
+    }
+
+    try {
+        const prerollData = {
+            adLink,
+            title: title || null,
+            clickUrl: clickUrl || null,
+            type: 'preroll',
+        };
+
+        if (currentPrerollEdit) {
+            prerollData.updatedAt = new Date();
+            await db.collection(COLLECTIONS.IMAGES).doc(currentPrerollEdit).update(prerollData);
+        } else {
+            prerollData.createdAt = new Date();
+            await db.collection(COLLECTIONS.IMAGES).add(prerollData);
+        }
+        closePrerollModal();
+        loadPrerollAds();
+    } catch (error) {
+        alert('Error saving pre-roll ad: ' + error.message);
+    }
+}
+
+async function deletePrerollAd(id) {
+    if (!confirm('Are you sure you want to delete this pre-roll ad?')) return;
+
+    try {
+        await db.collection(COLLECTIONS.IMAGES).doc(id).delete();
+        loadPrerollAds();
+    } catch (error) {
+        alert('Error deleting pre-roll ad: ' + error.message);
     }
 }
 
