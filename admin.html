@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="theme-color" content="#000000">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
@@ -23,6 +24,8 @@
             <div class="sidebar-menu">
                 <a href="#" onclick="switchTab('images')" class="menu-item active" id="tab-images">Images</a>
                 <a href="#" onclick="switchTab('banners')" class="menu-item" id="tab-banners">Banners</a>
+                <a href="#" onclick="switchTab('videos')" class="menu-item" id="tab-videos">Videos</a>
+                <a href="#" onclick="switchTab('preroll')" class="menu-item" id="tab-preroll">Pre-roll Ads</a>
             </div>
         </aside>
 
@@ -58,6 +61,24 @@
                     <button class="btn-primary" onclick="openBannerModal()">+ Add Banner</button>
                 </div>
                 <div id="bannersList" class="banners-list"></div>
+            </section>
+
+            <!-- Videos Tab -->
+            <section id="videos-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Video Management</h2>
+                    <button class="btn-primary" onclick="openVideoModal()">+ Add Video</button>
+                </div>
+                <div id="videosList" class="images-list"></div>
+            </section>
+
+            <!-- Pre-roll Ads Tab -->
+            <section id="preroll-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Pre-roll Ads</h2>
+                    <button class="btn-primary" onclick="openPrerollModal()">+ Add Ad</button>
+                </div>
+                <div id="preRollList" class="images-list"></div>
             </section>
         </main>
     </div>
@@ -112,6 +133,48 @@
                     </select>
                 </div>
                 <button type="submit" class="btn-primary">Save Banner</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div id="videoModal" class="modal">
+        <div class="modal-content small">
+            <button class="modal-close" onclick="closeVideoModal()">&times;</button>
+            <h3 id="videoModalTitle">Add Video</h3>
+            <form id="videoForm">
+                <div class="form-group">
+                    <label for="videoLink">Video Link *</label>
+                    <input type="url" id="videoLink" required>
+                </div>
+                <div class="form-group">
+                    <label for="videoTitle">Video Title</label>
+                    <input type="text" id="videoTitle" placeholder="e.g. Title or description" required>
+                </div>
+                <button type="submit" class="btn-primary">Save Video</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pre-roll Ad Modal -->
+    <div id="prerollModal" class="modal">
+        <div class="modal-content small">
+            <button class="modal-close" onclick="closePrerollModal()">&times;</button>
+            <h3 id="prerollModalTitle">Add Pre-roll Ad</h3>
+            <form id="prerollForm">
+                <div class="form-group">
+                    <label for="adLink">Ad Video Link *</label>
+                    <input type="url" id="adLink" required>
+                </div>
+                <div class="form-group">
+                    <label for="adTitle">Ad Title</label>
+                    <input type="text" id="adTitle" placeholder="e.g. Sponsor Ad" required>
+                </div>
+                <div class="form-group">
+                    <label for="adClickUrl">Click-through URL</label>
+                    <input type="url" id="adClickUrl" placeholder="https://example.com">
+                </div>
+                <button type="submit" class="btn-primary">Save Ad</button>
             </form>
         </div>
     </div>
