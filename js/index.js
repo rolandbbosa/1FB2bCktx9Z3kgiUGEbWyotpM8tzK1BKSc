@@ -34,6 +34,35 @@ function isGif(url) {
     return /\.(gif)(\?.*)?$/i.test(url || '');
 }
 
+// Verify a single image URL can load within a timeout
+function verifyImage(url, timeout = 5000) {
+    return new Promise((resolve) => {
+        if (!url) return resolve(false);
+        const img = new Image();
+        let finished = false;
+        const timer = setTimeout(() => {
+            if (finished) return;
+            finished = true;
+            img.src = '';
+            resolve(false);
+        }, timeout);
+
+        img.onload = () => {
+            if (finished) return;
+            finished = true;
+            clearTimeout(timer);
+            resolve(true);
+        };
+        img.onerror = () => {
+            if (finished) return;
+            finished = true;
+            clearTimeout(timer);
+            resolve(false);
+        };
+        img.src = url;
+    });
+}
+
 function filterImageType(section) {
     if (section === 'images') {
         const dropdown = document.getElementById('mediaTypeDropdown');
@@ -124,29 +153,44 @@ async function loadImages() {
 // ===== RANDOM IMAGE SECTION =====
 
 async function loadRandomImage() {
+    const container = document.getElementById('randomImageContainer');
     if (allImages.length === 0) {
-        document.getElementById('randomImageContainer').innerHTML = '<div class="loading">No images available</div>';
+        container.innerHTML = '<div class="loading">No images available</div>';
         return;
     }
 
-    const randomIndex = Math.floor(Math.random() * allImages.length);
-    currentRandomImage = allImages[randomIndex];
-    
-    const container = document.getElementById('randomImageContainer');
-    container.innerHTML = `<img src="${currentRandomImage.imageLink}" alt="Random Image" onclick="openImageModal('${currentRandomImage.id}')">`;
+    // Try a few random images until we find one that loads
+    const maxAttempts = Math.min(allImages.length, 8);
+    let found = false;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const randomIndex = Math.floor(Math.random() * allImages.length);
+        const candidate = allImages[randomIndex];
+        // verify candidate
+        try {
+            const ok = await verifyImage(candidate.imageLink, 3000);
+            if (ok) {
+                currentRandomImage = candidate;
+                container.innerHTML = `<img src="${currentRandomImage.imageLink}" alt="Random Image" onclick="openImageModal('${currentRandomImage.id}')">`;
+                found = true;
+                break;
+            }
+        } catch (e) {
+            // ignore and continue
+        }
+    }
+
+    if (!found) {
+        container.innerHTML = '<div class="loading">No loadable images found</div>';
+    }
 }
 
 // ===== IMAGES GRID WITH PAGINATION =====
 
-function renderImagesGrid() {
+async function renderImagesGrid() {
     const filteredImages = allImages.filter(img => {
         if (currentImageTypeFilter === 'gifs') return isGif(img.imageLink);
         return !isGif(img.imageLink);
     });
-
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    const paginatedImages = filteredImages.slice(start, end);
 
     const grid = document.getElementById('imagesGrid');
     grid.innerHTML = '';
@@ -156,16 +200,33 @@ function renderImagesGrid() {
             ? 'No GIFs available'
             : 'No images available';
         grid.innerHTML = `<p style="text-align: center; grid-column: 1 / -1; color: var(--text-muted);">${emptyText}</p>`;
-    } else {
-        paginatedImages.forEach(image => {
-            const item = document.createElement('div');
-            item.className = 'image-item';
-            item.innerHTML = `<img src="${image.imageLink}" alt="Image" onclick="openImageModal('${image.id}')">`;
-            grid.appendChild(item);
-        });
+        renderPagination(0);
+        return;
     }
 
-    renderPagination(filteredImages.length);
+    // Verify all filtered images and build a list of valid ones
+    const verifyPromises = filteredImages.map(img => verifyImage(img.imageLink));
+    const verifyResults = await Promise.all(verifyPromises);
+    const validImages = filteredImages.filter((img, idx) => verifyResults[idx]);
+
+    if (validImages.length === 0) {
+        grid.innerHTML = `<p style="text-align: center; grid-column: 1 / -1; color: var(--text-muted);">No loadable images available</p>`;
+        renderPagination(0);
+        return;
+    }
+
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const paginatedImages = validImages.slice(start, end);
+
+    paginatedImages.forEach(image => {
+        const item = document.createElement('div');
+        item.className = 'image-item';
+        item.innerHTML = `<img src="${image.imageLink}" alt="Image" onclick="openImageModal('${image.id}')">`;
+        grid.appendChild(item);
+    });
+
+    renderPagination(validImages.length);
 }
 
 function renderPagination(totalItems = null) {
