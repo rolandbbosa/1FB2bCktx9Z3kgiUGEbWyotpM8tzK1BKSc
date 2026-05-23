@@ -413,30 +413,48 @@ function renderPagination() {
     const totalPages = Math.ceil(dailyVideos.length / itemsPerPage);
     if (totalPages <= 1) return;
 
-    const createLink = (text, page, isDisabled = false, isActive = false) => {
-        const link = document.createElement('a');
-        link.textContent = text;
-        link.href = isDisabled ? 'javascript:void(0);' : buildHash(page, null);
-        if (isDisabled) {
-            link.classList.add('disabled');
-            link.setAttribute('aria-disabled', 'true');
+    // Previous button
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '← Previous';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            window.location.hash = buildHash(currentPage, null);
+            document.querySelector('.section.active')?.scrollIntoView({ behavior: 'smooth' });
         }
-        if (isActive) {
-            link.classList.add('active');
-        }
-        return link;
-    };
+    });
+    pagination.appendChild(prevBtn);
 
-    const prevLink = createLink('← Previous', currentPage - 1, currentPage === 1);
-    pagination.appendChild(prevLink);
+    // Page number buttons (limit number shown similar to index.js)
+    const maxButtons = window.innerWidth <= 768 ? 2 : 4;
+    let startPage = Math.max(1, Math.min(currentPage - 1, totalPages - maxButtons + 1));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
 
-    for (let i = 1; i <= totalPages; i++) {
-        const pageLink = createLink(i.toString(), i, false, i === currentPage);
-        pagination.appendChild(pageLink);
+    for (let i = startPage; i <= endPage; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i.toString();
+        if (i === currentPage) btn.className = 'active';
+        btn.addEventListener('click', () => {
+            currentPage = i;
+            window.location.hash = buildHash(currentPage, null);
+            document.querySelector('.section.active')?.scrollIntoView({ behavior: 'smooth' });
+        });
+        pagination.appendChild(btn);
     }
 
-    const nextLink = createLink('Next →', currentPage + 1, currentPage === totalPages);
-    pagination.appendChild(nextLink);
+    // Next button
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = 'Next →';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            window.location.hash = buildHash(currentPage, null);
+            document.querySelector('.section.active')?.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+    pagination.appendChild(nextBtn);
 }
 
 function setupModalVideoForPlayback(source, title, enableControls = true) {
