@@ -34,6 +34,89 @@ function getVideoTitle(data) {
     return data.title || data.name || 'Video Preview';
 }
 
+const VIDEO_RETRY_INTERVAL = 8000;
+const VIDEO_RETRY_MESSAGE_DELAY = 10000;
+const VIDEO_MAX_RETRY = 12;
+
+function isValidVideoLink(url) {
+    return typeof url === 'string' && url.trim() !== '';
+}
+
+function buildRetryVideoUrl(url, attempt) {
+    if (attempt <= 0) return url;
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}retry=${Date.now()}&attempt=${attempt}`;
+}
+
+function showVideoStatusMessage(grid, text) {
+    let message = grid.querySelector('.video-status-message');
+    if (!message) {
+        message = document.createElement('p');
+        message.className = 'video-status-message';
+        message.style.cssText = 'text-align:center; grid-column:1 / -1; color: var(--text-muted);';
+        grid.appendChild(message);
+    }
+    message.textContent = text;
+}
+
+function clearVideoStatusMessage(grid) {
+    const message = grid.querySelector('.video-status-message');
+    if (message) message.remove();
+}
+
+function setupVideoLoadWithRetry(video, videoEl, item, grid, loadingEl, onSuccess, onFailure) {
+    let retryAttempt = 0;
+    let appended = false;
+    let resolved = false;
+
+    function appendItem() {
+        if (appended) return;
+        appended = true;
+        clearVideoStatusMessage(grid);
+        if (!item.parentNode) {
+            grid.appendChild(item);
+        }
+        if (loadingEl && loadingEl.style.display !== 'none') {
+            loadingEl.style.display = 'none';
+        }
+        if (typeof onSuccess === 'function') {
+            onSuccess();
+        }
+    }
+
+    function loadSource() {
+        videoEl.src = buildRetryVideoUrl(video.videoLink, retryAttempt);
+        videoEl.load();
+    }
+
+    function handlePlayable() {
+        if (resolved) return;
+        resolved = true;
+        appendItem();
+    }
+
+    function handleError() {
+        if (resolved) return;
+        retryAttempt += 1;
+        if (retryAttempt > VIDEO_MAX_RETRY) {
+            if (appended && item.parentNode) {
+                item.parentNode.removeChild(item);
+            }
+            if (typeof onFailure === 'function') {
+                onFailure();
+            }
+            return;
+        }
+        setTimeout(loadSource, VIDEO_RETRY_INTERVAL);
+    }
+
+    videoEl.addEventListener('loadeddata', handlePlayable);
+    videoEl.addEventListener('canplaythrough', handlePlayable);
+    videoEl.addEventListener('error', handleError);
+
+    loadSource();
+}
+
 function seededRandom(seed) {
     return function() {
         seed = (seed * 9301 + 49297) % 233280;
@@ -101,7 +184,7 @@ async function loadVideos() {
             const videoLink = getVideoLink(data);
             const hasImageLink = !!data.imageLink;
             const isPreroll = data.type === 'preroll';
-            if ((data.type === 'video' || (videoLink && !hasImageLink && !isPreroll))) {
+            if ((data.type === 'video' || (videoLink && !hasImageLink && !isPreroll)) && isValidVideoLink(videoLink)) {
                 allVideos.push({ id: doc.id, videoLink, title: getVideoTitle(data) });
             }
         });
@@ -164,21 +247,31 @@ function resetAdControls() {
     }
     const linkButton = document.getElementById('prerollLinkButton');
     const skipButton = document.getElementById('skipAdButton');
-    if (linkButton) linkButton.style.display = 'none';
+    const modalContent = document.querySelector('.video-modal-content');
+    if (linkButton) {
+        linkButton.style.display = 'none';
+        linkButton.removeAttribute('href');
+        linkButton.innerHTML = '<span class="overlay-text">See cams</span>';
+    }
     if (skipButton) skipButton.style.display = 'none';
+    if (modalContent) modalContent.classList.remove('ad-active');
 }
 
 function setAdControls(ad) {
     const linkButton = document.getElementById('prerollLinkButton');
     const skipButton = document.getElementById('skipAdButton');
-    if (!linkButton || !skipButton) return;
+    const modalContent = document.querySelector('.video-modal-content');
+    if (!linkButton || !skipButton || !modalContent) return;
 
     if (ad && ad.clickUrl) {
-        linkButton.style.display = 'inline-flex';
         linkButton.href = ad.clickUrl;
+        linkButton.style.display = 'flex';
+        linkButton.innerHTML = '<span class="overlay-text">See cams</span>';
+        modalContent.classList.add('ad-active');
     } else {
         linkButton.style.display = 'none';
         linkButton.removeAttribute('href');
+        modalContent.classList.remove('ad-active');
     }
     skipButton.style.display = 'none';
     if (currentAdSkipTimeout) {
@@ -188,7 +281,7 @@ function setAdControls(ad) {
     if (ad) {
         currentAdSkipTimeout = setTimeout(() => {
             skipButton.style.display = 'inline-flex';
-        }, 3000);
+        }, 5000);
     }
 }
 
@@ -207,63 +300,48 @@ function renderVideosGrid() {
     const grid = document.getElementById('videosGrid');
     const loadingEl = document.getElementById('videosLoading');
     grid.innerHTML = '';
+    clearVideoStatusMessage(grid);
     if (loadingEl) loadingEl.style.display = 'block';
 
     if (dailyVideos.length === 0) {
-        grid.innerHTML = '<p style="text-align:center; grid-column:1 / -1; color: var(--text-muted);">No videos to show.</p>';
+        showVideoStatusMessage(grid, 'No videos to show.');
+        if (loadingEl) loadingEl.style.display = 'none';
         return;
     }
 
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     const pageVideos = dailyVideos.slice(start, end);
+    let visibleCount = 0;
+    let pendingVideos = pageVideos.length;
 
-    let loadedCount = 0;
     pageVideos.forEach(video => {
+        if (!isValidVideoLink(video.videoLink)) {
+            pendingVideos -= 1;
+            return;
+        }
+
         const item = document.createElement('div');
         item.className = 'video-card';
-        // create thumbnail wrapper for overlay
         const thumb = document.createElement('div');
         thumb.className = 'video-thumb';
         thumb.style.position = 'relative';
 
         const videoEl = document.createElement('video');
-        videoEl.src = video.videoLink;
         videoEl.muted = true;
         videoEl.playsInline = true;
-        videoEl.preload = 'metadata';
+        videoEl.setAttribute('playsinline', '');
+        videoEl.preload = 'auto';
         videoEl.style.width = '100%';
         videoEl.style.height = '220px';
         videoEl.style.objectFit = 'cover';
         videoEl.addEventListener('contextmenu', (event) => event.preventDefault());
-
-        // don't hide items while metadata loads; keep thumbnails clickable even
-        // if the video source doesn't provide metadata (e.g., external hosts)
-        let appended = false;
-        videoEl.addEventListener('loadedmetadata', () => {
-            loadedCount += 1;
-            // Append the card only when the video reports metadata (playable)
-            if (!appended) {
-                grid.appendChild(item);
-                appended = true;
-            }
-            if (loadingEl && loadedCount === 1) loadingEl.style.display = 'none';
-        });
-
-        videoEl.addEventListener('error', () => {
-            // If the video fails to load, do not append the card. If it was
-            // already appended, remove it so only working videos remain.
-            try {
-                if (appended && item.parentNode) item.parentNode.removeChild(item);
-            } catch (err) {}
-        });
 
         const overlay = document.createElement('a');
         overlay.className = 'video-overlay';
         overlay.href = buildHash(currentPage, video.id);
         overlay.innerHTML = '<div class="overlay-content">▶ Preview</div>';
         overlay.addEventListener('click', (e) => {
-            // allow hash navigation to trigger modal, prevent default full navigation
             e.preventDefault();
             window.location.hash = buildHash(currentPage, video.id);
         });
@@ -278,22 +356,32 @@ function renderVideosGrid() {
         item.appendChild(thumb);
         item.appendChild(label);
 
-        // items are appended when/if `loadedmetadata` fires above
+        setupVideoLoadWithRetry(video, videoEl, item, grid, loadingEl, () => {
+            visibleCount += 1;
+            if (visibleCount === 1 && loadingEl) {
+                loadingEl.style.display = 'none';
+            }
+            pendingVideos -= 1;
+            if (pendingVideos === 0 && visibleCount === 0) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                showVideoStatusMessage(grid, 'No playable videos found on this page.');
+            }
+        }, () => {
+            pendingVideos -= 1;
+            if (pendingVideos === 0 && visibleCount === 0) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                showVideoStatusMessage(grid, 'No playable videos found on this page.');
+            }
+        });
     });
 
     document.getElementById('videoCount').textContent = `${allVideos.length} stored videos.`;
     document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${Math.ceil(dailyVideos.length / itemsPerPage)}`;
 
-    // if none report metadata within short time, hide loading. Only show the
-    // "No playable videos" message if there are no cards at all.
-    setTimeout(() => {
-        if (loadingEl && loadedCount === 0 && grid.children.length === 0) {
-            loadingEl.style.display = 'none';
-            grid.innerHTML = '<p style="text-align:center; grid-column:1 / -1; color: var(--text-muted);">No playable videos found on this page.</p>';
-        } else if (loadingEl) {
-            loadingEl.style.display = 'none';
-        }
-    }, 1200);
+    if (pendingVideos === 0 && visibleCount === 0) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        showVideoStatusMessage(grid, 'No playable videos found on this page.');
+    }
 }
 
 function renderPagination() {
