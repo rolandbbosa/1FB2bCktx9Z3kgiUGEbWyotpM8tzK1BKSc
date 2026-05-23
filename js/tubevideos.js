@@ -25,6 +25,7 @@ let currentPopupAd = null;
 let currentMainVideoSource = null;
 let currentMainVideoTitle = null;
 let currentAdSkipTimeout = null;
+let adPlayingListener = null;
 
 function getVideoLink(data) {
     return data.videoLink || data.videoUrl || data.link || data.url || data.src;
@@ -248,6 +249,12 @@ function resetAdControls() {
     const linkButton = document.getElementById('prerollLinkButton');
     const skipButton = document.getElementById('skipAdButton');
     const modalContent = document.querySelector('.video-modal-content');
+    const modalVideo = document.getElementById('modalVideo');
+    // remove any pending 'playing' listener
+    if (adPlayingListener && modalVideo) {
+        modalVideo.removeEventListener('playing', adPlayingListener);
+        adPlayingListener = null;
+    }
     if (linkButton) {
         linkButton.style.display = 'none';
         linkButton.removeAttribute('href');
@@ -261,7 +268,18 @@ function setAdControls(ad) {
     const linkButton = document.getElementById('prerollLinkButton');
     const skipButton = document.getElementById('skipAdButton');
     const modalContent = document.querySelector('.video-modal-content');
+    const modalVideo = document.getElementById('modalVideo');
     if (!linkButton || !skipButton || !modalContent) return;
+    // clear previous listener and timeout
+    if (adPlayingListener && modalVideo) {
+        modalVideo.removeEventListener('playing', adPlayingListener);
+        adPlayingListener = null;
+    }
+    if (currentAdSkipTimeout) {
+        clearTimeout(currentAdSkipTimeout);
+        currentAdSkipTimeout = null;
+    }
+    skipButton.style.display = 'none';
 
     if (ad && ad.clickUrl) {
         linkButton.href = ad.clickUrl;
@@ -273,15 +291,19 @@ function setAdControls(ad) {
         linkButton.removeAttribute('href');
         modalContent.classList.remove('ad-active');
     }
-    skipButton.style.display = 'none';
-    if (currentAdSkipTimeout) {
-        clearTimeout(currentAdSkipTimeout);
-        currentAdSkipTimeout = null;
-    }
-    if (ad) {
-        currentAdSkipTimeout = setTimeout(() => {
-            skipButton.style.display = 'inline-flex';
-        }, 5000);
+
+    // Start skip countdown only after the ad actually starts playing
+    if (ad && modalVideo) {
+        adPlayingListener = function onAdPlaying() {
+            if (currentAdSkipTimeout) clearTimeout(currentAdSkipTimeout);
+            currentAdSkipTimeout = setTimeout(() => {
+                skipButton.style.display = 'inline-flex';
+            }, 5000);
+            // remove listener after it's used
+            modalVideo.removeEventListener('playing', adPlayingListener);
+            adPlayingListener = null;
+        };
+        modalVideo.addEventListener('playing', adPlayingListener);
     }
 }
 
