@@ -141,7 +141,7 @@ function getDailySeed() {
 }
 
 function buildHash(page = null, videoId = null) {
-    const parts = ['#imageporn-TubeVideos'];
+    const parts = ['#TubeVideos'];
     if (page && page > 1) parts.push(`page-${page}`);
     if (videoId) parts.push(`video-${videoId}`);
     return parts.join('/');
