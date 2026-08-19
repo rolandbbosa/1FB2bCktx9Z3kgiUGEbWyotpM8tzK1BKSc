@@ -2,6 +2,7 @@
 const firebaseConfig = {
     apiKey: "AIzaSyBt-Aw3J7xr8ynjngJOHVR1IIzIOqTSmyQ",
     authDomain: "imageporn-389c1.firebaseapp.com",
+    databaseURL: "https://imageporn-389c1-default-rtdb.firebaseio.com",
     projectId: "imageporn-389c1",
     storageBucket: "imageporn-389c1.firebasestorage.app",
     messagingSenderId: "113697549803",
