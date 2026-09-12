@@ -362,7 +362,7 @@ function renderVideosGrid() {
         const overlay = document.createElement('a');
         overlay.className = 'video-overlay';
         overlay.href = buildHash(currentPage, video.id);
-        overlay.innerHTML = '<div class="overlay-content">▶ Preview</div>';
+        overlay.innerHTML = '<div class="overlay-content">â–¶ Preview</div>';
         overlay.addEventListener('click', (e) => {
             e.preventDefault();
             window.location.hash = buildHash(currentPage, video.id);
@@ -415,7 +415,7 @@ function renderPagination() {
 
     // Previous button
     const prevBtn = document.createElement('button');
-    prevBtn.textContent = '← Previous';
+    prevBtn.textContent = 'â† Previous';
     prevBtn.disabled = currentPage === 1;
     prevBtn.addEventListener('click', () => {
         if (currentPage > 1) {
@@ -445,7 +445,7 @@ function renderPagination() {
 
     // Next button
     const nextBtn = document.createElement('button');
-    nextBtn.textContent = 'Next →';
+    nextBtn.textContent = 'Next â†’';
     nextBtn.disabled = currentPage === totalPages;
     nextBtn.addEventListener('click', () => {
         if (currentPage < totalPages) {
@@ -492,7 +492,7 @@ function openVideoModal(videoId, updateHash = true) {
 
     if (ad) {
         currentPopupAd = ad;
-        setupModalVideoForPlayback(ad.adLink, `Ad: ${ad.title || 'Pre-roll'} — ${mainTitle}`, false);
+        setupModalVideoForPlayback(ad.adLink, `Ad: ${ad.title || 'Pre-roll'} â€” ${mainTitle}`, false);
         setAdControls(ad);
         modalVideo.onended = playMainVideo;
         modalVideo.onerror = playMainVideo;
