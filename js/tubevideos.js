@@ -362,7 +362,8 @@ function renderVideosGrid() {
         const overlay = document.createElement('a');
         overlay.className = 'video-overlay';
         overlay.href = buildHash(currentPage, video.id);
-        overlay.innerHTML = '<div class="overlay-content">â–¶ Preview</div>';
+        overlay.innerHTML = '<div class="overlay-content"><i class="fa-solid fa-play" aria-hidden="true"></i> Preview</div>';
+        overlay.setAttribute('aria-label', `Preview ${video.title}`);
         overlay.addEventListener('click', (e) => {
             e.preventDefault();
             window.location.hash = buildHash(currentPage, video.id);
@@ -415,12 +416,12 @@ function renderPagination() {
 
     // Previous button
     const prevBtn = document.createElement('button');
-    prevBtn.textContent = 'â† Previous';
+    prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Previous';
+    prevBtn.setAttribute('aria-label', 'Go to previous page');
     prevBtn.disabled = currentPage === 1;
     prevBtn.addEventListener('click', () => {
         if (currentPage > 1) {
-            currentPage--;
-            window.location.hash = buildHash(currentPage, null);
+            window.location.hash = buildHash(currentPage - 1, null);
             document.querySelector('.section.active')?.scrollIntoView({ behavior: 'smooth' });
         }
     });
@@ -436,8 +437,7 @@ function renderPagination() {
         btn.textContent = i.toString();
         if (i === currentPage) btn.className = 'active';
         btn.addEventListener('click', () => {
-            currentPage = i;
-            window.location.hash = buildHash(currentPage, null);
+            window.location.hash = buildHash(i, null);
             document.querySelector('.section.active')?.scrollIntoView({ behavior: 'smooth' });
         });
         pagination.appendChild(btn);
@@ -445,12 +445,12 @@ function renderPagination() {
 
     // Next button
     const nextBtn = document.createElement('button');
-    nextBtn.textContent = 'Next â†’';
+    nextBtn.innerHTML = 'Next <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>';
+    nextBtn.setAttribute('aria-label', 'Go to next page');
     nextBtn.disabled = currentPage === totalPages;
     nextBtn.addEventListener('click', () => {
         if (currentPage < totalPages) {
-            currentPage++;
-            window.location.hash = buildHash(currentPage, null);
+            window.location.hash = buildHash(currentPage + 1, null);
             document.querySelector('.section.active')?.scrollIntoView({ behavior: 'smooth' });
         }
     });
