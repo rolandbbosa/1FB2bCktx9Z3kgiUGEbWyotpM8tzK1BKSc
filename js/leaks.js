@@ -23,6 +23,20 @@ const IMGBB_API_KEY = 'b104f553cace3645d1868c4bedc8f20b';
 const VIDEO_UPLOAD_API_URL = 'https://video-upload-api.bbosamoney.workers.dev';
 const realtimeDb = firebase.database();
 
+function getDailyLeakSeed() {
+    const today = new Date();
+    return Number(`${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`);
+}
+
+function hashLeakOrder(value) {
+    let result = 2166136261;
+    for (let index = 0; index < value.length; index++) {
+        result ^= value.charCodeAt(index);
+        result = Math.imul(result, 16777619);
+    }
+    return result >>> 0;
+}
+
 function isLeakGif(url) {
     return /\.(gif)(\?.*)?$/i.test(url || '');
 }
@@ -154,7 +168,7 @@ async function loadLeaks() {
         const records = snapshot.val() || {};
         leaksImages = Object.entries(records)
             .map(([id, data]) => ({ id, ...data }))
-            .sort((first, second) => (second.createdAt || 0) - (first.createdAt || 0));
+            .sort((first, second) => hashLeakOrder(`${getDailyLeakSeed()}:${first.id}`) - hashLeakOrder(`${getDailyLeakSeed()}:${second.id}`));
         renderLeaks();
         handleLeakHashChange();
     } catch (error) {
