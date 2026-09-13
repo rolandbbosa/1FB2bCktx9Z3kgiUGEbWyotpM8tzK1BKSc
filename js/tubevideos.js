@@ -492,7 +492,7 @@ function openVideoModal(videoId, updateHash = true) {
 
     if (ad) {
         currentPopupAd = ad;
-        setupModalVideoForPlayback(ad.adLink, `Ad: ${ad.title || 'Pre-roll'} â€” ${mainTitle}`, false);
+        setupModalVideoForPlayback(ad.adLink, `Ad: ${ad.title || 'Pre-roll'} : ${mainTitle}`, false);
         setAdControls(ad);
         modalVideo.onended = playMainVideo;
         modalVideo.onerror = playMainVideo;
